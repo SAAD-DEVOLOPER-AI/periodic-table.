@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Periodic Table</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+}
+
+header {
+    text-align: center;
+    padding: 25px 10px;
+    background: #111827;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 38px;
+}
+
+header p {
+    color: #94a3b8;
+}
+
+.controls {
+    text-align: center;
+    padding: 20px;
+}
+
+#search {
+    width: 320px;
+    max-width: 90%;
+    padding: 13px 18px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+}
+
+.table-container {
+    overflow-x: auto;
+    padding: 20px;
+}
+
+.periodic-table {
+    display: grid;
+    grid-template-columns: repeat(18, 70px);
+    grid-template-rows: repeat(10, 85px);
+    gap: 5px;
+    width: max-content;
+    margin: auto;
+}
+
+.element {
+    position: relative;
+    border-radius: 8px;
+    padding: 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.element:hover {
+    transform: scale(1.08);
+    z-index: 5;
+    box-shadow: 0 0 20px rgba(255,255,255,0.4);
+}
+
+.number {
+    font-size: 10px;
+    text-align: left;
+}
+
+.symbol {
+    font-size: 25px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.name {
+    font-size: 9px;
+    margin-top: 3px;
+}
+
+.mass {
+    font-size: 8px;
+    margin-top: 2px;
+}
+
+/* Element categories */
+
+.alkali {
+    background: #ef4444;
+}
+
+.alkaline {
+    background: #f97316;
+}
+
+.transition {
+    background: #eab308;
+    color: #111;
+}
+
+.post-transition {
+    background: #84cc16;
+    color: #111;
+}
+
+.metalloid {
+    background: #14b8a6;
+}
+
+.nonmetal {
+    background: #06b6d4;
+}
+
+.halogen {
+    background: #3b82f6;
+}
+
+.noble {
+    background: #8b5cf6;
+}
+
+.lanthanide {
+    background: #ec4899;
+}
+
+.actinide {
+    background: #f43f5e;
+}
+
+.unknown {
+    background: #64748b;
+}
+
+/* Modal */
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.modal-content {
+    width: 400px;
+    max-width: 90%;
+    background: #1e293b;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
+.close {
+    float: right;
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.modal-symbol {
+    font-size: 70px;
+    font-weight: bold;
+}
+
+.modal h2 {
+    margin-bottom: 5px;
+}
+
+.info {
+    margin-top: 20px;
+    line-height: 1.8;
+}
+
+.legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 20px;
+}
+
+.legend span {
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>⚛ Advanced Periodic Table</h1>
+    <p>Interactive Periodic Table of the Elements</p>
+</header>
+
+<div class="controls">
+    <input
+        type="text"
+        id="search"
+        placeholder="🔎 Search element, symbol or atomic number..."
+        oninput="searchElements()"
+    >
+</div>
+
+<div class="table-container">
+    <div class="periodic-table" id="table"></div>
+</div>
+
+<div class="legend">
+    <span class="alkali">Alkali Metal</span>
+    <span class="alkaline">Alkaline Earth</span>
+    <span class="transition">Transition Metal</span>
+    <span class="post-transition">Post-transition</span>
+    <span class="metalloid">Metalloid</span>
+    <span class="nonmetal">Nonmetal</span>
+    <span class="halogen">Halogen</span>
+    <span class="noble">Noble Gas</span>
+    <span class="lanthanide">Lanthanide</span>
+    <span class="actinide">Actinide</span>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">×</span>
+
+        <div class="modal-symbol" id="modalSymbol"></div>
+        <h2 id="modalName"></h2>
+
+        <div class="info">
+            <b>Atomic Number:</b> <span id="modalNumber"></span><br>
+            <b>Atomic Mass:</b> <span id="modalMass"></span><br>
+            <b>Category:</b> <span id="modalCategory"></span><br>
+            <b>Period:</b> <span id="modalPeriod"></span><br>
+            <b>Group:</b> <span id="modalGroup"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+
+const elements = [
+
+[1,"H","Hydrogen","1.008","nonmetal",1,1,1],
+[2,"He","Helium","4.0026","noble",1,18,1],
+
+[3,"Li","Lithium","6.94","alkali",2,1,1],
+[4,"Be","Beryllium","9.0122","alkaline",2,2,1],
+[5,"B","Boron","10.81","metalloid",2,13,1],
+[6,"C","Carbon","12.011","nonmetal",2,14,1],
+[7,"N","Nitrogen","14.007","nonmetal",2,15,1],
+[8,"O","Oxygen","15.999","nonmetal",2,16,1],
+[9,"F","Fluorine","18.998","halogen",2,17,1],
+[10,"Ne","Neon","20.180","noble",2,18,1],
+
+[11,"Na","Sodium","22.990","alkali",3,1,1],
+[12,"Mg","Magnesium","24.305","alkaline",3,2,1],
+[13,"Al","Aluminium","26.982","post-transition",3,13,1],
+[14,"Si","Silicon","28.085","metalloid",3,14,1],
+[15,"P","Phosphorus","30.974","nonmetal",3,15,1],
+[16,"S","Sulfur","32.06","nonmetal",3,16,1],
+[17,"Cl","Chlorine","35.45","halogen",3,17,1],
+[18,"Ar","Argon","39.948","noble",3,18,1],
+
+[19,"K","Potassium","39.098","alkali",4,1,1],
+[20,"Ca","Calcium","40.078","alkaline",4,2,1],
+[21,"Sc","Scandium","44.956","transition",4,3,1],
+[22,"Ti","Titanium","47.867","transition",4,4,1],
+[23,"V","Vanadium","50.942","transition",4,5,1],
+[24,"Cr","Chromium","52.00","transition",4,6,1],
+[25,"Mn","Manganese","54.938","transition",4,7,1],
+[26,"Fe","Iron","55.845","transition",4,8,1],
+[27,"Co","Cobalt","58.933","transition",4,9,1],
+[28,"Ni","Nickel","58.693","transition",4,10,1],
+[29,"Cu","Copper","63.546","transition",4,11,1],
+[30,"Zn","Zinc","65.38","transition",4,12,1],
+[31,"Ga","Gallium","69.723","post-transition",4,13,1],
+[32,"Ge","Germanium","72.630","metalloid",4,14,1],
+[33,"As","Arsenic","74.922","metalloid",4,15,1],
+[34,"Se","Selenium","78.971","nonmetal",4,16,1],
+[35,"Br","Bromine","79.904","halogen",4,17,1],
+[36,"Kr","Krypton","83.798","noble",4,18,1],
+
+[37,"Rb","Rubidium","85.468","alkali",5,1,1],
+[38,"Sr","Strontium","87.62","alkaline",5,2,1],
+[39,"Y","Yttrium","88.906","transition",5,3,1],
+[40,"Zr","Zirconium","91.224","transition",5,4,1],
+[41,"Nb","Niobium","92.906","transition",5,5,1],
+[42,"Mo","Molybdenum","95.95","transition",5,6,1],
+[43,"Tc","Technetium","98","transition",5,7,1],
+[44,"Ru","Ruthenium","101.07","transition",5,8,1],
+[45,"Rh","Rhodium","102.91","transition",5,9,1],
+[46,"Pd","Palladium","106.42","transition",5,10,1],
+[47,"Ag","Silver","107.87","transition",5,11,1],
+[48,"Cd","Cadmium","112.41","transition",5,12,1],
+[49,"In","Indium","114.82","post-transition",5,13,1],
+[50,"Sn","Tin","118.71","post-transition",5,14,1],
+[51,"Sb","Antimony","121.76","metalloid",5,15,1],
+[52,"Te","Tellurium","127.60","metalloid",5,16,1],
+[53,"I","Iodine","126.90","halogen",5,17,1],
+[54,"Xe","Xenon","131.29","noble",5,18,1],
+
+[55,"Cs","Caesium","132.91","alkali",6,1,1],
+[56,"Ba","Barium","137.33","alkaline",6,2,1],
+
+[57,"La","Lanthanum","138.91","lanthanide",8,4,1],
+[58,"Ce","Cerium","140.12","lanthanide",8,5,1],
+[59,"Pr","Praseodymium","140.91","lanthanide",8,6,1],
+[60,"Nd","Neodymium","144.24","lanthanide",8,7,1],
+[61,"Pm","Promethium","145","lanthanide",8,8,1],
+[62,"Sm","Samarium","150.36","lanthanide",8,9,1],
+[63,"Eu","Europium","151.96","lanthanide",8,10,1],
+[64,"Gd","Gadolinium","157.25","lanthanide",8,11,1],
+[65,"Tb","Terbium","158.93","lanthanide",8,12,1],
+[66,"Dy","Dysprosium","162.50","lanthanide",8,13,1],
+[67,"Ho","Holmium","164.93","lanthanide",8,14,1],
+[68,"Er","Erbium","167.26","lanthanide",8,15,1],
+[69,"Tm","Thulium","168.93","lanthanide",8,16,1],
+[70,"Yb","Ytterbium","173.05","lanthanide",8,17,1],
+[71,"Lu","Lutetium","174.97","lanthanide",8,18,1],
+
+[72,"Hf","Hafnium","178.49","transition",6,4,1],
+[73,"Ta","Tantalum","180.95","transition",6,5,1],
+[74,"W","Tungsten","183.84","transition",6,6,1],
+[75,"Re","Rhenium","186.21","transition",6,7,1],
+[76,"Os","Osmium","190.23","transition",6,8,1],
+[77,"Ir","Iridium","192.22","transition",6,9,1],
+[78,"Pt","Platinum","195.08","transition",6,10,1],
+[79,"Au","Gold","196.97","transition",6,11,1],
+[80,"Hg","Mercury","200.59","transition",6,12,1],
+[81,"Tl","Thallium","204.38","post-transition",6,13,1],
+[82,"Pb","Lead","207.2","post-transition",6,14,1],
+[83,"Bi","Bismuth","208.98","post-transition",6,15,1],
+[84,"Po","Polonium","209","post-transition",6,16,1],
+[85,"At","Astatine","210","halogen",6,17,1],
+[86,"Rn","Radon","222","noble",6,18,1],
+
+[87,"Fr","Francium","223","alkali",7,1,1],
+[88,"Ra","Radium","226","alkaline",7,2,1],
+
+[89,"Ac","Actinium","227","actinide",9,4,1],
+[90,"Th","Thorium","232.04","actinide",9,5,1],
+[91,"Pa","Protactinium","231.04","actinide",9,6,1],
+[92,"U","Uranium","238.03","actinide",9,7,1],
+[93,"Np","Neptunium","237","actinide",9,8,1],
+[94,"Pu","Plutonium","244","actinide",9,9,1],
+[95,"Am","Americium","243","actinide",9,10,1],
+[96,"Cm","Curium","247","actinide",9,11,1],
+[97,"Bk","Berkelium","247","actinide",9,12,1],
+[98,"Cf","Californium","251","actinide",9,13,1],
+[99,"Es","Einsteinium","252","actinide",9,14,1],
+[100,"Fm","Fermium","257","actinide",9,15,1],
+[101,"Md","Mendelevium","258","actinide",9,16,1],
+[102,"No","Nobelium","259","actinide",9,17,1],
+[103,"Lr","Lawrencium","266","actinide",9,18,1],
+
+[104,"Rf","Rutherfordium","267","transition",7,4,1],
+[105,"Db","Dubnium","268","transition",7,5,1],
+[106,"Sg","Seaborgium","269","transition",7,6,1],
+[107,"Bh","Bohrium","270","transition",7,7,1],
+[108,"Hs","Hassium","277","transition",7,8,1],
+[109,"Mt","Meitnerium","278","unknown",7,9,1],
+[110,"Ds","Darmstadtium","281","unknown",7,10,1],
+[111,"Rg","Roentgenium","282","unknown",7,11,1],
+[112,"Cn","Copernicium","285","transition",7,12,1],
+[113,"Nh","Nihonium","286","unknown",7,13,1],
+[114,"Fl","Flerovium","289","unknown",7,14,1],
+[115,"Mc","Moscovium","290","unknown",7,15,1],
+[116,"Lv","Livermorium","293","unknown",7,16,1],
+[117,"Ts","Tennessine","294","halogen",7,17,1],
+[118,"Og","Oganesson","294","noble",7,18,1]
+
+];
+
+const table = document.getElementById("table");
+
+function createTable(data = elements) {
+
+    table.innerHTML = "";
+
+    data.forEach(el => {
+
+        const [number, symbol, name, mass, category, row, col] = el;
+
+        const div = document.createElement("div");
+
+        div.className = `element ${category}`;
+
+        div.style.gridRow = row;
+        div.style.gridColumn = col;
+
+        div.innerHTML = `
+            <div class="number">${number}</div>
+            <div class="symbol">${symbol}</div>
+            <div class="name">${name}</div>
+            <div class="mass">${mass}</div>
+        `;
+
+        div.onclick = () => showElement(el);
+
+        table.appendChild(div);
+    });
+}
+
+function showElement(el) {
+
+    const [number, symbol, name, mass, category, period, group] = el;
+
+    document.getElementById("modalSymbol").textContent = symbol;
+    document.getElementById("modalName").textContent = name;
+    document.getElementById("modalNumber").textContent = number;
+    document.getElementById("modalMass").textContent = mass;
+    document.getElementById("modalCategory").textContent = category;
+    document.getElementById("modalPeriod").textContent = period;
+    document.getElementById("modalGroup").textContent = group;
+
+    document.getElementById("modal").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("modal").style.display = "none";
+}
+
+function searchElements() {
+
+    const search = document
+        .getElementById("search")
+        .value
+        .toLowerCase();
+
+    const filtered = elements.filter(el => {
+
+        const number = el[0].toString();
+        const symbol = el[1].toLowerCase();
+        const name = el[2].toLowerCase();
+
+        return (
+            number.includes(search) ||
+            symbol.includes(search) ||
+            name.includes(search)
+        );
+    });
+
+    createTable(filtered);
+}
+
+window.onclick = function(event) {
+
+    const modal = document.getElementById("modal");
+
+    if (event.target === modal) {
+        closeModal();
+    }
+};
+
+createTable();
+
+</script>
+
+</body>
+</html>
